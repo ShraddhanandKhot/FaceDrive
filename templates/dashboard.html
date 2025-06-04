@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - FaceDrive</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: rgb(25, 33, 42);
+            color: white;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            border-radius: 0px 35px 0px 0px;
+        }
+
+        .sidebar h2 {
+            margin-bottom: 20px;
+        }
+
+        .username {
+            background-color: #3498db;
+            border-radius: 10px;
+            padding: 10px;
+            display: inline-block;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+            background-color: #ecf0f1;
+            overflow-y: auto;
+        }
+
+        h3 {
+            margin-top: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        td {
+            padding: 10px;
+            vertical-align: middle;
+        }
+
+        a {
+            text-decoration: none;
+            color: #2980b9;
+        }
+
+        button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #c0392b;
+        }
+
+        .file-list {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .preview {
+            max-width: 120px;
+            max-height: 120px;
+            display: block;
+            margin-top: 8px;
+            border-radius: 5px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+
+        .flash-message {
+            background-color: #dff0d8;
+            color: #3c763d;
+            padding: 12px 16px;
+            border-left: 5px solid #3c763d;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Welcome!! <br>
+            <span class="username">{{ username }}</span> 😁🎉
+        </h2>
+
+        <h3>Upload a new file:</h3>
+        <form action="/upload" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="username" value="{{ username }}">
+            <label>Select file:</label><br>
+            <input type="file" name="file" required><br><br>
+            <input type="submit" value="Upload">
+        </form>
+    </div>
+
+    <div class="main-content">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="flash-message">
+              {% for message in messages %}
+                <p>{{ message }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <h3>Your Uploaded Files:</h3>
+        <div class="file-list">
+            {% if files %}
+                <table>
+                    {% for file in files %}
+                    <tr>
+                        <td>
+                            <strong>{{ file[1] }}</strong><br>
+                            {{ file[3] }}
+                            <div>
+                                <a href="/preview/{{ file[2] }}" target="_blank">🔍 Preview</a>
+                            </div>
+                            {% if file[1].endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+                                <img class="preview" src="/preview/{{ file[2] }}" alt="Image Preview">
+                            {% elif file[1].endswith('.pdf') %}
+                                <embed class="preview" src="/preview/{{ file[2] }}" type="application/pdf">
+                            {% elif file[1].endswith('.txt') %}
+                                <iframe class="preview" src="/preview/{{ file[2] }}"></iframe>
+                            {% else %}
+                                <div class="preview" style="color: gray;">No preview available</div>
+                            {% endif %}
+                        </td>
+                        <td><a href="/download/{{ file[2] }}">Download</a></td>
+                        <td>
+                            <form action="/delete/{{ file[0] }}/{{ username }}" method="POST" style="display:inline;">
+                                <button type="submit" onclick="return confirm('Are you sure you want to delete this file?');">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No files uploaded yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

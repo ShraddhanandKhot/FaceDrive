@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - FaceDrive</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px 40px;
+            width: 400px;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        h2 {
+            background: linear-gradient(to right, #2d6cdf, #639fff);
+            color: white;
+            padding: 14px 0;
+            margin: -30px -40px 25px -40px;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            font-size: 22px;
+        }
+
+        video {
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            width: 100%;
+            height: 30%;
+            margin-bottom: 12px;
+        }
+
+        .status {
+            color: #007b00;
+            font-weight: 600;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+
+        .flash {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .flash.success { background-color: #4CAF50; color: white; }
+        .flash.warning { background-color: #ff9800; color: white; }
+        .flash.danger  { background-color: #f44336; color: white; }
+
+        #preview-img {
+            display: none;
+            margin-top: 10px;
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #login {
+            background-color: #2d6cdf;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            margin-top: 15px;
+            font-size: 15px;
+            width: 100%;
+            cursor: not-allowed;
+            transition: background-color 0.3s ease;
+        }
+
+        #login.enabled {
+            cursor: pointer;
+            background-color: #1c54d1;
+        }
+
+        a {
+            color: #2d6cdf;
+            text-decoration: none;
+        }
+
+        p {
+            margin-top: 12px;
+            font-size: 14px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h2>Login with Face ID</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <video id="video" autoplay></video>
+    <div class="status" id="capture-status">🔍 Detecting blink...</div>
+    <img id="preview-img" alt="Preview Image">
+
+    <form action="{{ url_for('login') }}" method="POST">
+        <input type="hidden" name="face_image" id="face_image_data">
+        <input type="submit" value="Login" id="login" disabled>
+    </form>
+
+    <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a>.</p>
+    <p>Have any issues? <a href="{{ url_for('contact') }}">Contact us</a>.</p>
+</div>
+
+<script>
+    const video = document.getElementById('video');
+    const captureStatus = document.getElementById('capture-status');
+    const previewImg = document.getElementById('preview-img');
+    const loginBtn = document.getElementById('login');
+    const faceImageInput = document.getElementById('face_image_data');
+
+    const LEFT_EYE = [159, 145];
+    const RIGHT_EYE = [386, 374];
+
+    let blinkCount = 0;
+    let blinkInProgress = false;
+    let challengeActive = false;
+    let countdownInterval;
+
+    function getEAR(landmarks, eye) {
+        const top = landmarks[eye[0]];
+        const bottom = landmarks[eye[1]];
+        return Math.abs(top.y - bottom.y);
+    }
+
+    const faceMesh = new FaceMesh({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    });
+
+    faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+    });
+
+    faceMesh.onResults((results) => {
+        if (!challengeActive || results.multiFaceLandmarks.length === 0) return;
+
+        const landmarks = results.multiFaceLandmarks[0];
+        const leftEAR = getEAR(landmarks, LEFT_EYE);
+        const rightEAR = getEAR(landmarks, RIGHT_EYE);
+        const avgEAR = (leftEAR + rightEAR) / 2;
+
+        if (avgEAR < 0.015 && !blinkInProgress) {
+            blinkInProgress = true;
+            blinkCount++;
+            captureStatus.textContent = `👁 Blink detected! Count: ${blinkCount}`;
+
+            if (blinkCount >= 3) {
+                challengeActive = false;
+                clearInterval(countdownInterval);
+                captureStatus.textContent = "✅ Blink challenge passed! Capturing image...";
+                setTimeout(() => {
+                    captureImage();
+                }, 400);
+            }
+        } else if (avgEAR > 0.02) {
+            blinkInProgress = false;
+        }
+    });
+
+    function captureImage() {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = canvas.toDataURL('image/jpeg');
+        faceImageInput.value = imageData;
+        previewImg.src = imageData;
+        previewImg.style.display = 'block';
+
+        loginBtn.disabled = false;
+        loginBtn.classList.add('enabled');
+        loginBtn.style.cursor = 'pointer';
+        captureStatus.textContent = "📸 Image captured. Click login to continue.";
+    }
+
+    function startBlinkChallenge() {
+        blinkCount = 0;
+        blinkInProgress = false;
+        challengeActive = true;
+        loginBtn.disabled = true;
+        loginBtn.classList.remove('enabled');
+        previewImg.style.display = 'none';
+
+        let countdown = 5;
+        captureStatus.textContent = `🔍 Please blink twice in ${countdown} seconds...`;
+        countdownInterval = setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                captureStatus.textContent = `🔍 Please blink twice... (${countdown}s left)`;
+            } else {
+                clearInterval(countdownInterval);
+                if (blinkCount < 2) {
+                    challengeActive = false;
+                    captureStatus.textContent = "❌ Blink challenge failed. Please try again after few seconds.";
+                    setTimeout(startBlinkChallenge, 4000);
+                }
+            }
+        }, 1000);
+    }
+
+    const camera = new Camera(video, {
+        onFrame: async () => {
+            await faceMesh.send({ image: video });
+        },
+        width: 320,
+        height: 240
+    });
+
+    camera.start();
+    startBlinkChallenge();
+</script>
+
+</body>
+</html>

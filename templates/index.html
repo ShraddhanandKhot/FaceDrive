@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - FaceDrive</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <nav class="bg-white shadow p-4 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-green-600">FaceDrive Dashboard</h1>
+    <form action="/logout" method="POST">
+      <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">Logout</button>
+    </form>
+  </nav>
+
+  <main class="max-w-4xl mx-auto p-6 mt-6 bg-white rounded shadow">
+    <h2 class="text-xl font-semibold mb-4">Welcome, user 🌱!</h2>
+
+    <!-- Upload Form -->
+    <form action="/upload" method="POST" enctype="multipart/form-data" class="mb-6">
+      <label class="block mb-2 text-sm font-medium text-gray-700">Upload a File</label>
+      <div class="flex items-center space-x-4">
+        <input type="file" name="file" class="border rounded px-3 py-2 w-full">
+        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Upload</button>
+      </div>
+    </form>
+
+    <!-- File List -->
+    <h3 class="text-lg font-medium mb-2">Your Files</h3>
+    <ul class="divide-y divide-gray-200">
+      <!-- Example list item -->
+      <li class="py-3 flex justify-between items-center">
+        <span class="text-gray-700">report.pdf</span>
+        <div class="space-x-2">
+          <a href="/download/report.pdf" class="text-blue-600 hover:underline">Download</a>
+          <form action="/delete/report.pdf" method="POST" class="inline">
+            <button type="submit" class="text-red-600 hover:underline">Delete</button>
+          </form>
+        </div>
+      </li>
+      <!-- Repeat file items dynamically with backend -->
+    </ul>
+  </main>
+</body>
+</html>

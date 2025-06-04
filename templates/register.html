@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register - FaceDrive</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px 40px;
+            width: 400px;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        h2 {
+            background: linear-gradient(to right, #2d6cdf, #639fff);
+            color: white;
+            padding: 14px 0;
+            margin: -30px -40px 25px -40px;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            font-size: 22px;
+        }
+
+        video {
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            width: 100%;
+            height: auto;
+            margin-bottom: 12px;
+        }
+
+        button {
+            background-color: #2d6cdf;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #1c54d1;
+        }
+
+        form {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        input[type="submit"] {
+            width: 100%;
+            background-color: #2d6cdf;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #1c54d1;
+        }
+
+        p {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        a {
+            color: #2d6cdf;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Register Your Face</h2>
+
+    <p>Ensure your camera is enabled to capture your face for registration.</p>
+    <video id="video" autoplay></video>
+
+    <button id="capture">Capture Image</button>
+
+    <form action="/register" method="POST" enctype="multipart/form-data">
+        <label for="username">Username:</label>
+        <input type="text" name="username" required>
+
+        <input type="hidden" name="face_image" id="face_image_data">
+        <input type="submit" value="Register">
+    </form>
+
+    <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a>.</p>
+</div>
+
+<script>
+    const video = document.getElementById('video');
+    const captureButton = document.getElementById('capture');
+    const faceImageInput = document.getElementById('face_image_data');
+
+    // Create a feedback message element
+    const feedback = document.createElement('p');
+    feedback.style.color = "green";
+    feedback.style.fontWeight = "600";
+    feedback.style.marginTop = "10px";
+    feedback.style.display = "none"; // Hidden initially
+    captureButton.after(feedback);
+
+    // Create an image preview element
+    const preview = document.createElement('img');
+    preview.style.width = "100%";
+    preview.style.marginTop = "10px";
+    preview.style.borderRadius = "10px";
+    preview.style.display = "none"; // Hidden initially
+    captureButton.after(preview);
+
+    // Start camera stream
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function(stream) {
+            video.srcObject = stream;
+        })
+        .catch(function(error) {
+            console.log("Error accessing camera: ", error);
+        });
+
+    // Capture image
+    captureButton.addEventListener('click', function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = canvas.toDataURL('image/jpeg');
+        faceImageInput.value = imageData;
+
+        // Show feedback
+        feedback.textContent = "✅ Image captured successfully!";
+        feedback.style.display = "block";
+
+        // Show preview
+        preview.src = imageData;
+        preview.style.display = "block";
+    });
+</script>
+
+
+</body>
+</html>
