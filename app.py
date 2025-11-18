@@ -9,14 +9,12 @@ from io import BytesIO
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
-# Constants
+
 DB_PATH = 'users.db'
 UPLOAD_FOLDER = 'uploaded_files'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# -----------------------------
-# Database Initialization
-# -----------------------------
+
 def init_db():
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
@@ -39,9 +37,7 @@ def init_db():
         ''')
         conn.commit()
 
-# -----------------------------
-# Helper: Face Handling
-# -----------------------------
+
 def decode_base64_image(image_data):
     header, encoded = image_data.split(",", 1)
     return base64.b64decode(encoded)
@@ -74,11 +70,11 @@ def match_face(image_data, threshold=0.45):
                 best_score = distance
                 best_match = username
 
-    return best_match  # Can be None if no good match
+    return best_match 
 
-# -----------------------------
+
 # Routes
-# -----------------------------
+
 @app.route('/')
 def home():
     return redirect('/login')
@@ -156,7 +152,7 @@ def upload_file():
                       (username, uploaded_file.filename, filepath))
             conn.commit()
 
-        flash("✅ File uploaded successfully!", "success")
+        flash("File uploaded successfully!", "success")
     else:
         flash("⚠ No file selected.", "warning")
     return redirect(url_for('dashboard', username=username))
@@ -185,9 +181,9 @@ def delete_file(file_id, username):
                 pass
             c.execute('DELETE FROM files WHERE id=? AND username=?', (file_id, username))
             conn.commit()
-            flash("🗑 File deleted successfully.", "success")
+            flash("File deleted successfully.", "success")
         else:
-            flash("❌ File not found or access denied.", "danger")
+            flash(" File not found or access denied.", "danger")
     return redirect(url_for('dashboard', username=username))
 
 
@@ -195,9 +191,9 @@ def delete_file(file_id, username):
 def contact():
       return render_template('contact.html')
 
-# -----------------------------
+
 # Start the App
-# -----------------------------
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
