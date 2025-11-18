@@ -174,7 +174,7 @@
             if (blinkCount >= 3) {
                 challengeActive = false;
                 clearInterval(countdownInterval);
-                captureStatus.textContent = "✅ Blink challenge passed! Capturing image...";
+                captureStatus.textContent = " Blink challenge passed! Capturing image...";
                 setTimeout(() => {
                     captureImage();
                 }, 400);
@@ -199,7 +199,7 @@
         loginBtn.disabled = false;
         loginBtn.classList.add('enabled');
         loginBtn.style.cursor = 'pointer';
-        captureStatus.textContent = "📸 Image captured. Click login to continue.";
+        captureStatus.textContent = " Image captured. Click login to continue.";
     }
 
     function startBlinkChallenge() {
@@ -220,7 +220,7 @@
                 clearInterval(countdownInterval);
                 if (blinkCount < 2) {
                     challengeActive = false;
-                    captureStatus.textContent = "❌ Blink challenge failed. Please try again after few seconds.";
+                    captureStatus.textContent = " Blink challenge failed. Please try again after few seconds.";
                     setTimeout(startBlinkChallenge, 4000);
                 }
             }
